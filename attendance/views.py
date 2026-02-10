@@ -36,6 +36,7 @@ from .serializers import (
     AttendanceTakeResponseSerializer,
     EndAttendanceRequestSerializer,
     EndAttendanceResponseSerializer,
+    AttendanceHistoryByCourseSerializer,
 )
 
 # Lecturer ViewSet
@@ -385,6 +386,11 @@ class StudentAttendanceHistoryView(generics.GenericAPIView):
     serializer_class = AttendanceSerializer
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        responses={200: AttendanceHistoryByCourseSerializer(many=True)},
+        operation_summary="Student attendance history",
+        operation_description="Return a student's attendance history grouped by course.",
+    )
     def get(self, request, *args, **kwargs):
         # Fetch the current user and the corresponding student object
         user = self.request.user
@@ -413,6 +419,11 @@ class LecturerAttendanceHistoryView(generics.GenericAPIView):
     serializer_class = AttendanceSerializer
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        responses={200: AttendanceHistoryByCourseSerializer(many=True)},
+        operation_summary="Lecturer attendance history",
+        operation_description="Return attendance history for courses taught by the lecturer.",
+    )
     def get(self, request, *args, **kwargs):
         # Fetch the current user and the corresponding lecturer object
         user = self.request.user

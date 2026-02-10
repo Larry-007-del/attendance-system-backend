@@ -155,3 +155,12 @@ class EndAttendanceRequestSerializer(serializers.Serializer):
 class EndAttendanceResponseSerializer(serializers.Serializer):
     status = serializers.CharField(required=False, allow_blank=True)
     error = serializers.CharField(required=False, allow_blank=True)
+
+
+class AttendanceHistoryItemSerializer(serializers.Serializer):
+    date = serializers.CharField()
+
+
+class AttendanceHistoryByCourseSerializer(serializers.Serializer):
+    course_code = serializers.CharField()
+    attendances = AttendanceHistoryItemSerializer(many=True)
