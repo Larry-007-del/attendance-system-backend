@@ -190,14 +190,6 @@ class StudentLoginView(ObtainAuthToken):
         username = request.data.get('username')
         password = request.data.get('password')
         student_id = request.data.get('student_id')
-        staff_id = request.data.get('staff_id')
-        student_id = request.data.get('student_id')
-        staff_id = request.data.get('staff_id')
-        student_id = request.data.get('student_id')
-        staff_id = request.data.get('staff_id')
-        student_id = request.data.get('student_id')
-        staff_id = request.data.get('staff_id')
-        student_id = request.data.get('student_id')
 
         user = authenticate(request, username=username, password=password)
         if user and hasattr(user, 'student'):
@@ -246,6 +238,8 @@ class MobileLoginView(APIView):
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
+        student_id = request.data.get('student_id')
+        staff_id = request.data.get('staff_id')
 
         if not username or not password:
             return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
