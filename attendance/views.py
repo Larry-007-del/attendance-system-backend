@@ -31,6 +31,11 @@ from .serializers import (
     StaffLoginRequestSerializer,
     StaffLoginResponseSerializer,
     SubmitLocationResponseSerializer,
+    AttendanceTokenGenerateRequestSerializer,
+    AttendanceTakeRequestSerializer,
+    AttendanceTakeResponseSerializer,
+    EndAttendanceRequestSerializer,
+    EndAttendanceResponseSerializer,
 )
 
 # Lecturer ViewSet
@@ -59,6 +64,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'])
+    @swagger_auto_schema(
+        request_body=AttendanceTokenGenerateRequestSerializer,
+        responses={200: AttendanceTokenSerializer},
+        operation_summary="Generate attendance token",
+        operation_description="Generate a token for a course and optionally store lecturer location.",
+    )
     def generate_attendance_token(self, request, pk=None):
         course = self.get_object()
         token_value = request.data.get('token')
@@ -87,6 +98,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
+    @swagger_auto_schema(
+        request_body=AttendanceTakeRequestSerializer,
+        responses={200: AttendanceTakeResponseSerializer},
+        operation_summary="Take attendance",
+        operation_description="Record attendance for the authenticated student using a token.",
+    )
     def take_attendance(self, request):
         token = request.data.get('token')
 
@@ -159,6 +176,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=False, methods=['post'], url_path='end_attendance')
+    @swagger_auto_schema(
+        request_body=EndAttendanceRequestSerializer,
+        responses={200: EndAttendanceResponseSerializer},
+        operation_summary="End attendance session",
+        operation_description="Close the active attendance session for a course.",
+    )
     def end_attendance(self, request):
         course_id = request.data.get('course_id')
         if not course_id:

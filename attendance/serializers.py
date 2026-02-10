@@ -131,3 +131,27 @@ class StaffLoginResponseSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     username = serializers.CharField()
     staff_id = serializers.CharField()
+
+
+class AttendanceTokenGenerateRequestSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    latitude = serializers.FloatField()
+    longitude = serializers.FloatField()
+
+
+class AttendanceTakeRequestSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
+class AttendanceTakeResponseSerializer(serializers.Serializer):
+    message = serializers.CharField(required=False, allow_blank=True)
+    error = serializers.CharField(required=False, allow_blank=True)
+
+
+class EndAttendanceRequestSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+
+
+class EndAttendanceResponseSerializer(serializers.Serializer):
+    status = serializers.CharField(required=False, allow_blank=True)
+    error = serializers.CharField(required=False, allow_blank=True)
