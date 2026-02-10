@@ -196,6 +196,8 @@ class StudentLoginView(ObtainAuthToken):
         student_id = request.data.get('student_id')
         staff_id = request.data.get('staff_id')
         student_id = request.data.get('student_id')
+        staff_id = request.data.get('staff_id')
+        student_id = request.data.get('student_id')
 
         user = authenticate(request, username=username, password=password)
         if user and hasattr(user, 'student'):
