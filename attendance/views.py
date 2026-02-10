@@ -26,6 +26,10 @@ from .serializers import (
     SubmitLocationSerializer,
     MobileLoginRequestSerializer,
     MobileLoginResponseSerializer,
+    StudentLoginRequestSerializer,
+    StudentLoginResponseSerializer,
+    StaffLoginRequestSerializer,
+    StaffLoginResponseSerializer,
 )
 
 # Lecturer ViewSet
@@ -189,6 +193,12 @@ class StudentEnrolledCoursesView(generics.ListAPIView):
 
 # Custom Login Views
 class StudentLoginView(ObtainAuthToken):
+    @swagger_auto_schema(
+        request_body=StudentLoginRequestSerializer,
+        responses={200: StudentLoginResponseSerializer},
+        operation_summary="Student login",
+        operation_description="Authenticate a student using username, password, and student_id.",
+    )
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -212,6 +222,12 @@ class StudentLoginView(ObtainAuthToken):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 class StaffLoginView(ObtainAuthToken):
+    @swagger_auto_schema(
+        request_body=StaffLoginRequestSerializer,
+        responses={200: StaffLoginResponseSerializer},
+        operation_summary="Staff login",
+        operation_description="Authenticate staff using username, password, and staff_id.",
+    )
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')

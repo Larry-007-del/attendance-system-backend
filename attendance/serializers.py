@@ -100,3 +100,29 @@ class MobileLoginResponseSerializer(serializers.Serializer):
     role = serializers.CharField()
     student_id = serializers.CharField(required=False, allow_blank=True)
     staff_id = serializers.CharField(required=False, allow_blank=True)
+
+
+class StudentLoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    student_id = serializers.CharField()
+
+
+class StudentLoginResponseSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    student_id = serializers.CharField()
+
+
+class StaffLoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    staff_id = serializers.CharField()
+
+
+class StaffLoginResponseSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    staff_id = serializers.CharField()
