@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import authenticate, logout
@@ -230,6 +230,43 @@ class StaffLoginView(ObtainAuthToken):
                 return Response({'error': 'Invalid staff ID'}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MobileLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=username, password=password)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token, _ = Token.objects.get_or_create(user=user)
+        payload = {
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username,
+        }
+
+        if hasattr(user, 'student'):
+            payload.update({
+                'role': 'student',
+                'student_id': user.student.student_id,
+            })
+        elif hasattr(user, 'lecturer'):
+            payload.update({
+                'role': 'staff',
+                'staff_id': user.lecturer.staff_id,
+            })
+        else:
+            payload['role'] = 'user'
+
+        return Response(payload)
 
 # Logout View
 class LogoutView(generics.GenericAPIView):
