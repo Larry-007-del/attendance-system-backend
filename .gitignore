@@ -9,3 +9,4 @@ venv/
 staticfiles/
 media/
 .DS_Store
+.git - Copy/
