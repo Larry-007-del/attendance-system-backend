@@ -3,6 +3,7 @@ from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import authenticate, logout
@@ -22,7 +23,9 @@ from .serializers import (
     AttendanceSerializer,
     AttendanceTokenSerializer,
     LogoutSerializer,
-    SubmitLocationSerializer
+    SubmitLocationSerializer,
+    MobileLoginRequestSerializer,
+    MobileLoginResponseSerializer,
 )
 
 # Lecturer ViewSet
@@ -235,6 +238,15 @@ class StaffLoginView(ObtainAuthToken):
 class MobileLoginView(APIView):
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        request_body=MobileLoginRequestSerializer,
+        responses={200: MobileLoginResponseSerializer},
+        operation_summary="Mobile login",
+        operation_description=(
+            "Authenticate a user and return a token. Students must include "
+            "student_id; staff must include staff_id."
+        ),
+    )
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')

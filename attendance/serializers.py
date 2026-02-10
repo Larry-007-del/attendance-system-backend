@@ -84,3 +84,19 @@ class SubmitLocationSerializer(serializers.Serializer):
     latitude = serializers.FloatField()
     longitude = serializers.FloatField()
     attendance_token = serializers.CharField()
+
+
+class MobileLoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    student_id = serializers.CharField(required=False, allow_blank=False)
+    staff_id = serializers.CharField(required=False, allow_blank=False)
+
+
+class MobileLoginResponseSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    role = serializers.CharField()
+    student_id = serializers.CharField(required=False, allow_blank=True)
+    staff_id = serializers.CharField(required=False, allow_blank=True)
