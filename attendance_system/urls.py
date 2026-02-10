@@ -1,9 +1,24 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.http import HttpResponseRedirect, JsonResponse
+from django.db import connection
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+
+
+def _db_ok():
+    try:
+        connection.ensure_connection()
+        return True
+    except Exception:
+        return False
+
+
+def health_view(request):
+    db_ok = _db_ok()
+    payload = {'status': 'ok', 'db': 'ok'} if db_ok else {'status': 'degraded', 'db': 'error'}
+    return JsonResponse(payload, status=200 if db_ok else 503)
 
 # Swagger and ReDoc schema view
 schema_view = get_schema_view(
@@ -20,7 +35,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('health/', lambda request: JsonResponse({'status': 'ok'})),
+    path('health/', health_view),
     path('api/', include('attendance.urls')),
     path('admin/', admin.site.urls),
     path('', lambda request: HttpResponseRedirect('/api/')),  # Redirect root URL to /api/
