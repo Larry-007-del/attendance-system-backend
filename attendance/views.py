@@ -10,6 +10,8 @@ from django.contrib.auth import authenticate, logout
 from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework.views import APIView
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
 import csv
 from openpyxl import Workbook
 from django.utils.dateparse import parse_date
@@ -218,6 +220,7 @@ class StudentEnrolledCoursesView(generics.ListAPIView):
 
 # Custom Login Views
 class StudentLoginView(ObtainAuthToken):
+    @method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True))
     @swagger_auto_schema(
         request_body=StudentLoginRequestSerializer,
         responses={200: StudentLoginResponseSerializer},
@@ -247,6 +250,7 @@ class StudentLoginView(ObtainAuthToken):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 class StaffLoginView(ObtainAuthToken):
+    @method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True))
     @swagger_auto_schema(
         request_body=StaffLoginRequestSerializer,
         responses={200: StaffLoginResponseSerializer},
@@ -279,6 +283,7 @@ class StaffLoginView(ObtainAuthToken):
 class MobileLoginView(APIView):
     permission_classes = [AllowAny]
 
+    @method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True))
     @swagger_auto_schema(
         request_body=MobileLoginRequestSerializer,
         responses={200: MobileLoginResponseSerializer},
