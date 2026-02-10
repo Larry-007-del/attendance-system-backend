@@ -1,6 +1,7 @@
 # Attendance System Backend
 
 [![CI](https://github.com/Larry-007-del/attendance-system-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Larry-007-del/attendance-system-backend/actions/workflows/ci.yml)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Larry-007-del/attendance-system-backend)
 
 Django REST backend for a mobile attendance system. Designed for Render + Supabase deployment.
 
@@ -15,6 +16,12 @@ Django REST backend for a mobile attendance system. Designed for Render + Supaba
 
 - Python 3.11+
 - PostgreSQL (Supabase) or SQLite for local dev
+
+## Quick Start
+
+1) Set environment variables in Render.
+2) Click the Deploy to Render button above.
+3) After deploy, log in at /admin/ using the bootstrap superuser.
 
 ## Local Development
 
