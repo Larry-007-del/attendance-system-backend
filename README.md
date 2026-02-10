@@ -1,5 +1,7 @@
 # Attendance System Backend
 
+[![CI](https://github.com/Larry-007-del/attendance-system-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Larry-007-del/attendance-system-backend/actions/workflows/ci.yml)
+
 Django REST backend for a mobile attendance system. Designed for Render + Supabase deployment.
 
 ## Features
