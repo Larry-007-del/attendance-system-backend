@@ -190,6 +190,8 @@ class StudentLoginView(ObtainAuthToken):
         username = request.data.get('username')
         password = request.data.get('password')
         student_id = request.data.get('student_id')
+        staff_id = request.data.get('staff_id')
+        student_id = request.data.get('student_id')
 
         user = authenticate(request, username=username, password=password)
         if user and hasattr(user, 'student'):
@@ -254,11 +256,19 @@ class MobileLoginView(APIView):
         }
 
         if hasattr(user, 'student'):
+            if not student_id:
+                return Response({'error': 'student_id is required for student login.'}, status=status.HTTP_400_BAD_REQUEST)
+            if user.student.student_id != student_id:
+                return Response({'error': 'Invalid student ID.'}, status=status.HTTP_400_BAD_REQUEST)
             payload.update({
                 'role': 'student',
                 'student_id': user.student.student_id,
             })
         elif hasattr(user, 'lecturer'):
+            if not staff_id:
+                return Response({'error': 'staff_id is required for staff login.'}, status=status.HTTP_400_BAD_REQUEST)
+            if user.lecturer.staff_id != staff_id:
+                return Response({'error': 'Invalid staff ID.'}, status=status.HTTP_400_BAD_REQUEST)
             payload.update({
                 'role': 'staff',
                 'staff_id': user.lecturer.staff_id,
