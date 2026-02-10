@@ -1,5 +1,8 @@
+import os
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 from attendance.models import Course, CourseEnrollment, Lecturer, Student
 
@@ -8,6 +11,10 @@ class Command(BaseCommand):
     help = "Seed minimal sample data for Lecturer, Student, Course, and Enrollment."
 
     def handle(self, *args, **options):
+        if not settings.DEBUG and os.getenv("ALLOW_SEED_DATA", "false").lower() != "true":
+            self.stdout.write("Seeding disabled. Set ALLOW_SEED_DATA=true to override.")
+            return
+
         User = get_user_model()
 
         lecturer_user, lecturer_user_created = User.objects.get_or_create(
