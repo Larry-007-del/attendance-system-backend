@@ -86,6 +86,11 @@ class SubmitLocationSerializer(serializers.Serializer):
     attendance_token = serializers.CharField()
 
 
+class SubmitLocationResponseSerializer(serializers.Serializer):
+    status = serializers.CharField(required=False, allow_blank=True)
+    error = serializers.CharField(required=False, allow_blank=True)
+
+
 class MobileLoginRequestSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()

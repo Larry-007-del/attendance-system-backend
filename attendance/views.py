@@ -30,6 +30,7 @@ from .serializers import (
     StudentLoginResponseSerializer,
     StaffLoginRequestSerializer,
     StaffLoginResponseSerializer,
+    SubmitLocationResponseSerializer,
 )
 
 # Lecturer ViewSet
@@ -321,6 +322,15 @@ class SubmitLocationView(generics.GenericAPIView):
     serializer_class = SubmitLocationSerializer
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=SubmitLocationSerializer,
+        responses={200: SubmitLocationResponseSerializer},
+        operation_summary="Submit attendance location",
+        operation_description=(
+            "Validate a student's location against an active attendance token "
+            "and mark attendance if within the allowed radius."
+        ),
+    )
     def post(self, request, *args, **kwargs):
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
