@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: attendance-system
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate && python manage.py ensure_superuser && gunicorn attendance_system.wsgi:application --bind 0.0.0.0:$PORT
+    staticPublishPath: staticfiles
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        value: django-insecure-+76jshpcgfuy%+((^n57ev)t6du*qxo5z0@d_nxt$(wc@)s*2*
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "attendance-system-6a30.onrender.com,localhost,127.0.0.1"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://attendance-system-6a30.onrender.com,http://localhost:3000"
+      - key: DATABASE_URL
+        value: ""
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: ""
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: ""
+      - key: DJANGO_SUPERUSER_PASSWORD
+        value: ""
+      - key: RESET_BOOTSTRAP_FLAG
+        value: "False"
