@@ -13,11 +13,16 @@ router.register(r'attendance-tokens', views.AttendanceTokenViewSet, basename='at
 urlpatterns = [
     path('', include(router.urls)),
     
-    # Authentication endpoints
+    # Authentication endpoints (primary)
     path('auth/login/', views.MobileLoginView.as_view(), name='mobile_login'),
     path('auth/login/student/', views.StudentLoginView.as_view(), name='student_login'),
     path('auth/login/staff/', views.StaffLoginView.as_view(), name='staff_login'),
     path('auth/logout/', views.LogoutView.as_view(), name='api_logout'),
+    
+    # Legacy authentication endpoints (for backward compatibility)
+    path('login/', views.MobileLoginView.as_view(), name='mobile_login_legacy'),
+    path('login/student/', views.StudentLoginView.as_view(), name='student_login_legacy'),
+    path('login/staff/', views.StaffLoginView.as_view(), name='staff_login_legacy'),
     
     # User profile endpoint
     path('me/profile/', views.UserProfileView.as_view(), name='user_profile'),
