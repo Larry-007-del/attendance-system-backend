@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 import csv
 from openpyxl import Workbook
 from django.utils.dateparse import parse_date
