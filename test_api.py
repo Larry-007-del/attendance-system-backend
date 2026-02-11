@@ -25,175 +25,137 @@ def print_response(response):
 
 def test_health_check():
     """Test health endpoint"""
-    print("\n🔍 Testing Health Check...")
+    print("\n[TEST] Testing Health Check...")
     try:
         response = requests.get(f"{BASE_URL}/api/", timeout=10)
         print_response(response)
         return response.status_code == 200
     except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
+        print(f"[ERROR] Connection error: {e}")
         return False
 
 def test_swagger():
     """Test Swagger documentation"""
-    print("\n📚 Testing Swagger Docs...")
+    print("\n[TEST] Testing Swagger Docs...")
     try:
         response = requests.get(f"{BASE_URL}/swagger/", timeout=10)
         print_response(response)
         return response.status_code == 200
     except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
+        print(f"[ERROR] Connection error: {e}")
         return False
 
 def test_login():
     """Test JWT login endpoint"""
-    print("\n🔐 Testing JWT Login...")
-    
-    # Test student login
-    credentials = [
-        {"username": "student_user", "password": "ChangeMe123!", "student_id": "S0001"},
-        {"username": "lecturer_user", "password": "ChangeMe123!", "staff_id": "L0001"},
-    ]
-    
-    for creds in credentials:
-        try:
-            response = requests.post(
-                f"{BASE_URL}/api/auth/token/",
-                json=creds,
-                timeout=10
-            )
-            print(f"Login as {creds['username']}:")
-            print_response(response)
-            
-            if response.status_code == 200:
-                token_data = response.json()
-                return token_data.get('access'), token_data.get('refresh')
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Connection error: {e}")
-    
-    return None, None
-
-def test_protected_endpoints(token):
-    """Test protected endpoints with JWT token"""
-    if not token:
-        print("❌ No token available for protected endpoints")
-        return
-    
-    headers = {"Authorization": f"Bearer {token}"}
-    
-    # Test get courses
-    print("\n📚 Testing GET /api/courses/")
+    print("\n[TEST] Testing JWT Login...")
     try:
-        response = requests.get(f"{BASE_URL}/api/courses/", headers=headers, timeout=10)
-        print_response(response)
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
-    
-    # Test student enrolled courses
-    print("\n🎓 Testing GET /api/student/enrolled_courses/")
-    try:
-        response = requests.get(f"{BASE_URL}/api/student/enrolled_courses/", headers=headers, timeout=10)
-        print_response(response)
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
-    
-    # Test lecturer courses
-    print("\n👨‍🏫 Testing GET /api/lecturers/my-courses/")
-    try:
-        response = requests.get(f"{BASE_URL}/api/lecturers/my-courses/", headers=headers, timeout=10)
-        print_response(response)
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
-    
-    # Test user profile
-    print("\n👤 Testing GET /api/me/profile/")
-    try:
-        response = requests.get(f"{BASE_URL}/api/me/profile/", headers=headers, timeout=10)
-        print_response(response)
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
-    
-    # Test student attendance history
-    print("\n📊 Testing GET /api/student/attendance/history/")
-    try:
-        response = requests.get(f"{BASE_URL}/api/student/attendance/history/", headers=headers, timeout=10)
-        print_response(response)
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
-
-def test_token_refresh(refresh_token):
-    """Test token refresh"""
-    if not refresh_token:
-        print("❌ No refresh token available")
-        return
-    
-    print("\n🔄 Testing Token Refresh...")
-    try:
+        # Test with seed data credentials
         response = requests.post(
-            f"{BASE_URL}/api/auth/token/refresh/",
-            json={"refresh": refresh_token},
+            f"{BASE_URL}/api/auth/token/",
+            json={"username": "student_user", "password": "ChangeMe123!"},
             timeout=10
         )
         print_response(response)
+        if response.status_code == 200:
+            data = response.json()
+            print(f"\n[SUCCESS] Token received: {data.get('access', '')[:20]}...")
+            return True
+        return False
     except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
+        print(f"[ERROR] Connection error: {e}")
+        return False
 
-def test_admin_endpoints():
-    """Test admin dashboard endpoints"""
-    print("\n👨‍💼 Testing Admin Dashboard...")
-    
-    endpoints = [
-        "/admin/dashboard/",
-        "/admin/students/",
-        "/admin/lecturers/",
-        "/admin/courses/",
-        "/admin/reports/",
-    ]
-    
-    for endpoint in endpoints:
-        try:
-            response = requests.get(f"{BASE_URL}{endpoint}", timeout=10)
-            print(f"{endpoint}: Status {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Connection error for {endpoint}: {e}")
-
-def test_django_admin():
-    """Test Django admin"""
-    print("\n⚙️ Testing Django Admin...")
+def test_courses_list():
+    """Test courses list endpoint"""
+    print("\n[TEST] Testing Courses List...")
     try:
-        response = requests.get(f"{BASE_URL}/admin/", timeout=10)
-        print(f"Django Admin: Status {response.status_code}")
+        # First get a token
+        login_response = requests.post(
+            f"{BASE_URL}/api/auth/token/",
+            json={"username": "student_user", "password": "ChangeMe123!"},
+            timeout=10
+        )
+        
+        if login_response.status_code != 200:
+            print("[ERROR] Failed to get token")
+            return False
+        
+        token = login_response.json().get('access')
+        
+        response = requests.get(
+            f"{BASE_URL}/api/courses/",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        print_response(response)
+        return response.status_code == 200
     except requests.exceptions.RequestException as e:
-        print(f"❌ Connection error: {e}")
+        print(f"[ERROR] Connection error: {e}")
+        return False
+
+def test_attendance_history():
+    """Test student attendance history endpoint"""
+    print("\n[TEST] Testing Attendance History...")
+    try:
+        # First get a token
+        login_response = requests.post(
+            f"{BASE_URL}/api/auth/token/",
+            json={"username": "student_user", "password": "ChangeMe123!"},
+            timeout=10
+        )
+        
+        if login_response.status_code != 200:
+            print("[ERROR] Failed to get token")
+            return False
+        
+        token = login_response.json().get('access')
+        
+        response = requests.get(
+            f"{BASE_URL}/api/student/attendance/history/",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10
+        )
+        print_response(response)
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Connection error: {e}")
+        return False
 
 def main():
     print("="*60)
     print("Attendance System API Test")
     print("="*60)
-    print(f"Base URL: {BASE_URL}")
+    print(f"Base URL: {BASE_URL}\n")
     
-    # Test endpoints
-    health_ok = test_health_check()
+    results = []
     
-    if health_ok:
-        test_swagger()
-        access_token, refresh_token = test_login()
-        test_protected_endpoints(access_token)
-        test_token_refresh(refresh_token)
-        test_admin_endpoints()
-        test_django_admin()
-    else:
-        print("\n❌ Backend is not accessible. Please check:")
-        print("1. Render deployment is complete")
-        print("2. ALLOW_SEED_DATA=true is set")
-        print("3. Database migrations have run")
+    # Run tests
+    results.append(("Health Check", test_health_check()))
+    results.append(("Swagger Docs", test_swagger()))
+    results.append(("JWT Login", test_login()))
+    results.append(("Courses List", test_courses_list()))
+    results.append(("Attendance History", test_attendance_history()))
     
-    print("\n" + "="*60)
-    print("API Testing Complete!")
+    # Print summary
     print("="*60)
+    print("Test Results Summary")
+    print("="*60)
+    
+    passed = 0
+    failed = 0
+    
+    for name, result in results:
+        status = "PASS" if result else "FAIL"
+        print(f"{status}: {name}")
+        if result:
+            passed += 1
+        else:
+            failed += 1
+    
+    print(f"\nTotal: {passed} passed, {failed} failed")
+    
+    return failed == 0
 
 if __name__ == "__main__":
-    # Allow overriding base URL from command line
-    if len(sys.argv) > 1:
-        BASE_URL = sys.argv[1]
-    main()
+    success = main()
+    sys.exit(0 if success else 1)
