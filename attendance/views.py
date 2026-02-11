@@ -17,7 +17,7 @@ from openpyxl import Workbook
 from django.utils.dateparse import parse_date
 from collections import defaultdict
 
-from .models import Lecturer, Student, Course, Attendance, AttendanceToken
+from .models import Lecturer, Student, Course, Attendance, AttendanceToken, PendingAttendance
 from .serializers import (
     LecturerSerializer,
     StudentSerializer,
@@ -105,21 +105,33 @@ class CourseViewSet(viewsets.ModelViewSet):
         request_body=AttendanceTakeRequestSerializer,
         responses={200: AttendanceTakeResponseSerializer},
         operation_summary="Take attendance",
-        operation_description="Record attendance for the authenticated student using a token.",
+        operation_description="Record attendance for the authenticated student using a token with geofencing validation.",
     )
     def take_attendance(self, request):
-        token = request.data.get('token')
+        token_value = request.data.get('token')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
 
-        if not token:
+        if not token_value:
             return Response({'error': 'Token is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            attendance_token = AttendanceToken.objects.get(token=token, is_active=True)
+            attendance_token = AttendanceToken.objects.get(token=token_value, is_active=True)
             course = attendance_token.course
             student = get_object_or_404(Student, user=request.user)
 
             if student not in course.students.all():
                 return Response({'error': 'Student is not enrolled in this course.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate geofencing if course has geofence enabled
+            is_valid, distance = course.validate_location(latitude, longitude)
+            if not is_valid:
+                if distance < 0:
+                    return Response({'error': 'Location data required for this course.'}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({
+                        'error': f'You are outside the allowed radius. You are {distance:.2f}m away from the class location.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
             attendance, created = Attendance.objects.get_or_create(
                 course=course,
@@ -128,7 +140,10 @@ class CourseViewSet(viewsets.ModelViewSet):
             attendance.present_students.add(student)
             attendance.save()
 
-            return Response({'message': 'Attendance recorded successfully.'}, status=status.HTTP_200_OK)
+            return Response({
+                'message': 'Attendance recorded successfully.',
+                'distance': distance
+            }, status=status.HTTP_200_OK)
 
         except AttendanceToken.DoesNotExist:
             return Response({'error': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -515,3 +530,176 @@ class UserProfileView(generics.GenericAPIView):
             profile_data['role'] = 'user'
         
         return Response(profile_data)
+
+
+# Offline Sync Views
+class SyncAttendanceView(APIView):
+    """
+    API endpoint for syncing offline attendance records.
+    
+    Mobile app sends batch of attendance records that were recorded offline.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'records': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'student_id': openapi.Schema(type=openapi.TYPE_STRING),
+                            'course_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'token': openapi.Schema(type=openapi.TYPE_STRING),
+                            'latitude': openapi.Schema(type=openapi.TYPE_NUMBER),
+                            'longitude': openapi.Schema(type=openapi.TYPE_NUMBER),
+                            'timestamp': openapi.Schema(type=openapi.TYPE_STRING, description='ISO 8601 datetime'),
+                            'device_id': openapi.Schema(type=openapi.TYPE_STRING),
+                        }
+                    ),
+                    description='List of attendance records to sync'
+                )
+            }
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT),
+            400: openapi.Schema(type=openapi.TYPE_OBJECT),
+        },
+        operation_summary="Sync offline attendance records",
+        operation_description="Submit batch of attendance records recorded while offline"
+    )
+    def post(self, request):
+        records = request.data.get('records', [])
+        
+        if not records:
+            return Response({'error': 'No records provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        synced_count = 0
+        pending_count = 0
+        errors = []
+        
+        for record in records:
+            try:
+                student_id = record.get('student_id')
+                course_id = record.get('course_id')
+                token_value = record.get('token')
+                latitude = record.get('latitude')
+                longitude = record.get('longitude')
+                timestamp = record.get('timestamp')
+                device_id = record.get('device_id')
+                
+                # Check if this is a duplicate
+                existing = PendingAttendance.objects.filter(
+                    student_id=student_id,
+                    course_id=course_id,
+                    token=token_value,
+                    timestamp__minute__range=[
+                        timezone.now().replace(second=0, microsecond=0).minute - 1,
+                        timezone.now().replace(second=0, microsecond=0).minute + 1
+                    ]
+                ).exists()
+                
+                if existing:
+                    continue
+                
+                # Try to process immediately if token is valid
+                try:
+                    attendance_token = AttendanceToken.objects.get(
+                        token=token_value,
+                        course_id=course_id,
+                        is_active=True
+                    )
+                    
+                    student = Student.objects.get(student_id=student_id)
+                    attendance = Attendance.objects.get(
+                        course_id=course_id,
+                        is_active=True
+                    )
+                    
+                    attendance.present_students.add(student)
+                    synced_count += 1
+                    
+                except (AttendanceToken.DoesNotExist, Student.DoesNotExist, Attendance.DoesNotExist):
+                    # Store as pending for later processing
+                    PendingAttendance.objects.create(
+                        student_id=student_id,
+                        course_id=course_id,
+                        token=token_value,
+                        latitude=latitude,
+                        longitude=longitude,
+                        timestamp=timestamp,
+                        device_id=device_id,
+                        synced=False
+                    )
+                    pending_count += 1
+                    
+            except Exception as e:
+                errors.append({'record': record, 'error': str(e)})
+        
+        return Response({
+            'synced': synced_count,
+            'pending': pending_count,
+            'total': len(records),
+            'errors': errors if errors else None
+        })
+
+
+class ProcessPendingAttendanceView(APIView):
+    """
+    Process pending attendance records.
+    Admin endpoint to process records stored when device was offline.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get pending attendance records"""
+        pending = PendingAttendance.objects.filter(synced=False).order_by('-timestamp')
+        
+        data = [{
+            'id': p.id,
+            'student_id': p.student_id,
+            'course_id': p.course_id,
+            'token': p.token,
+            'timestamp': p.timestamp,
+            'created_at': p.created_at
+        } for p in pending]
+        
+        return Response({'pending_records': data, 'count': len(data)})
+    
+    def post(self, request):
+        """Process all pending records"""
+        pending = PendingAttendance.objects.filter(synced=False)
+        
+        processed = 0
+        failed = 0
+        
+        for record in pending:
+            try:
+                attendance_token = AttendanceToken.objects.get(
+                    token=record.token,
+                    course_id=record.course_id,
+                    is_active=True
+                )
+                
+                student = Student.objects.get(student_id=record.student_id)
+                attendance = Attendance.objects.get(
+                    course_id=record.course_id,
+                    is_active=True
+                )
+                
+                attendance.present_students.add(student)
+                record.synced = True
+                record.synced_at = timezone.now()
+                record.save()
+                processed += 1
+                
+            except Exception as e:
+                failed += 1
+        
+        return Response({
+            'processed': processed,
+            'failed': failed,
+            'total': processed + failed
+        })

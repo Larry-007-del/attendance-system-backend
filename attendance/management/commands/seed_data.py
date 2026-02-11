@@ -58,6 +58,9 @@ class Command(BaseCommand):
             defaults={
                 "name": "Intro to Computing",
                 "lecturer": lecturer,
+                "latitude": 5.6037,  # Sample coordinates (University of Ghana)
+                "longitude": -0.1870,
+                "radius_meters": 100.00,
             },
         )
 

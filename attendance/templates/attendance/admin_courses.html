@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+            color: white;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+        }
+        .sidebar a:hover {
+            background: #34495e;
+        }
+        .geofence-badge {
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-0">
+                <h4 class="text-center py-3 border-bottom">Admin Panel</h4>
+                <nav>
+                    <a href="{% url 'admin_dashboard' %}">📊 Dashboard</a>
+                    <a href="{% url 'admin_students' %}">👨‍🎓 Students</a>
+                    <a href="{% url 'admin_lecturers' %}">👨‍🏫 Lecturers</a>
+                    <a href="{% url 'admin_courses' %}">📚 Courses</a>
+                    <a href="{% url 'admin_attendance_report' %}">📋 Reports</a>
+                    <a href="/admin/">Django Admin</a>
+                </nav>
+            </div>
+            
+            <div class="col-md-10 p-4">
+                <h2 class="mb-4">Courses Management</h2>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Name</th>
+                                    <th>Lecturer</th>
+                                    <th>Students</th>
+                                    <th>Geofence</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in courses %}
+                                <tr>
+                                    <td>{{ course.course_code }}</td>
+                                    <td>{{ course.name }}</td>
+                                    <td>{{ course.lecturer.name }}</td>
+                                    <td>{{ course.students.count }}</td>
+                                    <td>
+                                        {% if course.has_geofence %}
+                                        <span class="badge bg-success geofence-badge">✓ Enabled</span>
+                                        <br>
+                                        <small class="text-muted">Radius: {{ course.radius_meters }}m</small>
+                                        {% else %}
+                                        <span class="badge bg-secondary geofence-badge">✗ Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if course.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/admin/attendance/course/{{ course.id }}/change/" class="btn btn-sm btn-primary">Edit</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No courses found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>Adding Geofence to a Course</h5>
+                    <p>To enable geofencing for a course, edit the course and provide:</p>
+                    <ul>
+                        <li><strong>Latitude:</strong> The latitude coordinate of the class location</li>
+                        <li><strong>Longitude:</strong> The longitude coordinate of the class location</li>
+                        <li><strong>Radius (meters):</strong> The maximum distance allowed from the class location</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

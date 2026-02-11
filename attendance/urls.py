@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
-from . import views
+from . import views, admin_views
 
 router = DefaultRouter()
 router.register(r'lecturers', views.LecturerViewSet, basename='lecturer')
@@ -43,4 +43,15 @@ urlpatterns = [
     
     # Legacy endpoints
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
+    
+    # Offline sync endpoints
+    path('sync/attendance/', views.SyncAttendanceView.as_view(), name='sync_attendance'),
+    path('sync/pending/', views.ProcessPendingAttendanceView.as_view(), name='process_pending'),
+    
+    # Admin dashboard URLs
+    path('admin/dashboard/', admin_views.admin_dashboard, name='admin_dashboard'),
+    path('admin/students/', admin_views.admin_students, name='admin_students'),
+    path('admin/lecturers/', admin_views.admin_lecturers, name='admin_lecturers'),
+    path('admin/courses/', admin_views.admin_courses, name='admin_courses'),
+    path('admin/reports/', admin_views.admin_attendance_report, name='admin_attendance_report'),
 ]

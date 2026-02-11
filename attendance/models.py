@@ -47,7 +47,12 @@ class Course(models.Model):
     course_code = models.CharField(max_length=10, unique=True)
     lecturer = models.ForeignKey(Lecturer, on_delete=models.CASCADE, related_name='courses')
     students = models.ManyToManyField(Student, through='CourseEnrollment', related_name='courses')
-    is_active = models.BooleanField(default=False)  # Added field
+    is_active = models.BooleanField(default=False)
+    
+    # Geofencing fields
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    radius_meters = models.DecimalField(max_digits=10, decimal_places=2, default=100.00, help_text="Radius in meters for geofencing validation")
 
     def __str__(self):
         return f"{self.name} ({self.course_code})"
@@ -56,6 +61,33 @@ class Course(models.Model):
         if not Lecturer.objects.filter(id=self.lecturer_id).exists():
             raise ValidationError("Lecturer does not exist.")
         super().clean()
+
+    def has_geofence(self):
+        """Check if course has geofencing enabled"""
+        return self.latitude is not None and self.longitude is not None
+
+    def validate_location(self, student_latitude, student_longitude, max_distance_meters=None):
+        """
+        Validate if student is within the geofence radius
+        Returns (is_valid, distance_meters) tuple
+        """
+        if not self.has_geofence():
+            return (True, 0.0)  # No geofence, allow all
+        
+        if student_latitude is None or student_longitude is None:
+            return (False, -1.0)  # Student location not provided
+        
+        try:
+            from decimal import Decimal
+            course_location = (float(self.latitude), float(self.longitude))
+            student_location = (float(student_latitude), float(student_longitude))
+            
+            distance = geodesic(course_location, student_location).meters
+            max_dist = max_distance_meters or float(self.radius_meters)
+            
+            return (distance <= max_dist, round(distance, 2))
+        except Exception as e:
+            raise ValidationError(f"Location validation error: {str(e)}")
 
 class CourseEnrollment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -122,3 +154,20 @@ class BootstrapFlag(models.Model):
 
     def __str__(self):
         return self.key
+
+
+class PendingAttendance(models.Model):
+    """Model for storing offline attendance records that need to be synced"""
+    student_id = models.CharField(max_length=10)
+    course_id = models.IntegerField()
+    token = models.CharField(max_length=6)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    timestamp = models.DateTimeField()
+    device_id = models.CharField(max_length=100, blank=True, null=True)
+    synced = models.BooleanField(default=False)
+    synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Pending: Student {self.student_id} - Course {self.course_id}"
