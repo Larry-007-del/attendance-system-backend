@@ -30,6 +30,6 @@ services:
       - key: DJANGO_SUPERUSER_PASSWORD
         value: "Admin123!"
       - key: RESET_BOOTSTRAP_FLAG
-        value: "False"
+        value: "true"
       - key: ALLOW_SEED_DATA
         value: "true"
