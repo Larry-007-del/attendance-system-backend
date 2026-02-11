@@ -12,14 +12,30 @@ router.register(r'attendance-tokens', views.AttendanceTokenViewSet, basename='at
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('studentenrolledcourses/', views.StudentEnrolledCoursesView.as_view(), name='student_enrolled_courses'),
-    path('login/', views.MobileLoginView.as_view(), name='mobile_login'),
-    path('login/student/', views.StudentLoginView.as_view(), name='student_login'),
-    path('login/staff/', views.StaffLoginView.as_view(), name='staff_login'),
-    path('logout/', views.LogoutView.as_view(), name='api_logout'),
+    
+    # Authentication endpoints
+    path('auth/login/', views.MobileLoginView.as_view(), name='mobile_login'),
+    path('auth/login/student/', views.StudentLoginView.as_view(), name='student_login'),
+    path('auth/login/staff/', views.StaffLoginView.as_view(), name='staff_login'),
+    path('auth/logout/', views.LogoutView.as_view(), name='api_logout'),
+    
+    # User profile endpoint
+    path('me/profile/', views.UserProfileView.as_view(), name='user_profile'),
+    
+    # Student endpoints
+    path('student/enrolled_courses/', views.StudentEnrolledCoursesView.as_view(), name='student_enrolled_courses'),
+    path('student/attendance/history/', views.StudentAttendanceHistoryView.as_view(), name='student_attendance_history'),
+    
+    # Lecturer endpoints
+    path('lecturers/my-courses/', views.LecturerViewSet.as_view({'get': 'my_courses'}), name='lecturer_my_courses'),
+    path('lecturer/attendance/history/', views.LecturerAttendanceHistoryView.as_view(), name='lecturer_attendance_history'),
+    
+    # Attendance endpoints
+    path('courses/take_attendance/', views.CourseViewSet.as_view({'post': 'take_attendance'}), name='take_attendance'),
     path('submit-location/', views.SubmitLocationView.as_view(), name='submit_location'),
-    path('student-attendance-history/', views.StudentAttendanceHistoryView.as_view(), name='student_attendance_history'),
-    path('lecturer-attendance-history/', views.LecturerAttendanceHistoryView.as_view(), name='lecturer_attendance_history'),
+    path('attendance/end_attendance/', views.AttendanceViewSet.as_view({'post': 'end_attendance'}), name='end_attendance'),
     path('lecturer-location/', views.LecturerLocationView.as_view(), name='lecturer_location'),
+    
+    # Legacy endpoints
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
 ]

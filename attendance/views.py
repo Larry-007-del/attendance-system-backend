@@ -473,3 +473,45 @@ class LecturerLocationView(APIView):
 
         except AttendanceToken.DoesNotExist:
             return Response({'error': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# User Profile View
+class UserProfileView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """Get the current user's profile information"""
+        user = request.user
+        
+        profile_data = {
+            'user_id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        }
+        
+        # Add role-specific data
+        if hasattr(user, 'student'):
+            student = user.student
+            profile_data.update({
+                'role': 'student',
+                'student_id': student.student_id,
+                'name': student.name,
+                'programme_of_study': student.programme_of_study,
+                'year': student.year,
+                'phone_number': student.phone_number,
+            })
+        elif hasattr(user, 'lecturer'):
+            lecturer = user.lecturer
+            profile_data.update({
+                'role': 'staff',
+                'staff_id': lecturer.staff_id,
+                'name': lecturer.name,
+                'department': lecturer.department,
+                'phone_number': lecturer.phone_number,
+            })
+        else:
+            profile_data['role'] = 'user'
+        
+        return Response(profile_data)
