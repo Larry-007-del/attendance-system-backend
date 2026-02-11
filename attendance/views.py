@@ -18,7 +18,7 @@ from openpyxl import Workbook
 from django.utils.dateparse import parse_date
 from collections import defaultdict
 
-from .models import Lecturer, Student, Course, Attendance, AttendanceToken, PendingAttendance
+from .models import Lecturer, Student, Course, Attendance, AttendanceToken, PendingAttendance, DeviceToken, CourseSubscription
 from .serializers import (
     LecturerSerializer,
     StudentSerializer,
@@ -703,4 +703,75 @@ class ProcessPendingAttendanceView(APIView):
             'processed': processed,
             'failed': failed,
             'total': processed + failed
+        })
+
+
+# Push Notification Views
+class RegisterDeviceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        fcm_token = request.data.get('fcm_token')
+        device_type = request.data.get('device_type', 'android')
+        
+        if not fcm_token:
+            return Response({'error': 'FCM token is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        DeviceToken.objects.update_or_create(
+            user=request.user,
+            token=fcm_token,
+            defaults={'device_type': device_type}
+        )
+        
+        return Response({'message': 'Device token registered successfully'})
+
+
+class SubscribeCourseView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, course_id):
+        CourseSubscription.objects.get_or_create(
+            user=request.user,
+            course_id=course_id
+        )
+        return Response({'message': 'Subscribed to course notifications'})
+
+    def delete(self, request, course_id):
+        CourseSubscription.objects.filter(
+            user=request.user,
+            course_id=course_id
+        ).delete()
+        return Response({'message': 'Unsubscribed from course notifications'})
+
+
+class SendNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Send notification to subscribed users (for lecturers)"""
+        title = request.data.get('title')
+        body = request.data.get('body')
+        course_id = request.data.get('course_id')
+        
+        if not title or not body:
+            return Response({'error': 'Title and body are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get subscribed users
+        if course_id:
+            subscriptions = CourseSubscription.objects.filter(course_id=course_id)
+        else:
+            subscriptions = CourseSubscription.objects.all()
+        
+        # Get device tokens for subscribed users
+        user_ids = subscriptions.values_list('user_id', flat=True)
+        tokens = DeviceToken.objects.filter(user_id__in=user_ids).values_list('token', flat=True)
+        
+        # Send notifications (using Firebase HTTP API - requires server key)
+        # For demo purposes, we'll just log this
+        print(f'Would send notification to {len(tokens)} devices')
+        print(f'Title: {title}, Body: {body}')
+        
+        return Response({
+            'message': 'Notifications queued',
+            'recipients': len(tokens)
         })

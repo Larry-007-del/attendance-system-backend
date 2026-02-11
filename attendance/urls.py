@@ -54,4 +54,9 @@ urlpatterns = [
     path('admin/lecturers/', admin_views.admin_lecturers, name='admin_lecturers'),
     path('admin/courses/', admin_views.admin_courses, name='admin_courses'),
     path('admin/reports/', admin_views.admin_attendance_report, name='admin_attendance_report'),
+    
+    # Push notification endpoints
+    path('notifications/register/', views.RegisterDeviceView.as_view(), name='register_device'),
+    path('notifications/subscribe/<int:course_id>/', views.SubscribeCourseView.as_view(), name='subscribe_course'),
+    path('notifications/send/', views.SendNotificationView.as_view(), name='send_notification'),
 ]
