@@ -24,11 +24,11 @@ services:
       - key: DATABASE_URL
         value: ""
       - key: DJANGO_SUPERUSER_USERNAME
-        value: ""
+        value: "admin"
       - key: DJANGO_SUPERUSER_EMAIL
-        value: ""
+        value: "admin@example.com"
       - key: DJANGO_SUPERUSER_PASSWORD
-        value: ""
+        value: "Admin123!"
       - key: RESET_BOOTSTRAP_FLAG
         value: "False"
       - key: ALLOW_SEED_DATA
